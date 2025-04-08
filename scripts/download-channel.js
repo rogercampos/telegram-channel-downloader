@@ -79,24 +79,36 @@ class DownloadChannel {
   recordMessages(messages) {
     const filePath = path.join(this.outputFolder, "all_message.json");
     if (!fs.existsSync(this.outputFolder)) {
-      fs.mkdirSync(this.outputFolder, { recursive: true });
+      fs.mkdirSync(this.outputFolder, {recursive: true});
     }
-
-    const data = messages.map((msg) => ({
-      id: msg.id,
-      message: msg.message,
-      date: msg.date,
-      out: msg.out,
-      hasMedia: !!msg.media,
-      sender: msg.fromId?.userId || msg.peerId?.userId,
-      mediaType: this.hasMedia(msg) ? getMediaType(msg) : undefined,
-      mediaPath: this.hasMedia(msg)
-        ? getMediaPath(msg, this.outputFolder)
-        : undefined,
-      mediaName: this.hasMedia(msg)
-        ? path.basename(getMediaPath(msg, this.outputFolder))
-        : undefined,
-    }));
+    const data = messages.map((msg) => {
+      let messageText = msg.message || "";
+      if (msg.entities && msg.entities.length > 0) {
+        msg.entities.sort((a, b) => b.offset - a.offset);
+        msg.entities.forEach((entity) => {
+          if (entity.className === "MessageEntityTextUrl") {
+            const url = entity.url;
+            const linkText = messageText.substring(entity.offset, entity.offset + entity.length);
+            messageText = messageText.substring(0, entity.offset) + `<a href="${url}">${linkText}</a>` + messageText.substring(entity.offset + entity.length);
+          }
+        });
+      }
+      return {
+        id: msg.id,
+        message: messageText,
+        date: msg.date,
+        out: msg.out,
+        hasMedia: !!msg.media,
+        sender: msg.fromId?.userId || msg.peerId?.userId,
+        mediaType: this.hasMedia(msg) ? getMediaType(msg) : undefined,
+        mediaPath: this.hasMedia(msg)
+            ? getMediaPath(msg, this.outputFolder)
+            : undefined,
+        mediaName: this.hasMedia(msg)
+            ? path.basename(getMediaPath(msg, this.outputFolder))
+            : undefined,
+      };
+    });
     appendToJSONArrayFile(filePath, data);
   }
 
