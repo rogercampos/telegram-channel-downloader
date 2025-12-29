@@ -15,8 +15,9 @@ class ProgressManager {
   start() {
     this.multiBar = new cliProgress.MultiBar(
       {
+        // Reset color and set to white at start of each line
         format:
-          "{filename} [{bar}] {percentage}% | {downloaded}/{total}",
+          "\x1b[0m\x1b[37m{filename} [{bar}] {percentage}% | {downloaded}/{total}\x1b[0m",
         clearOnComplete: false,
         hideCursor: true,
         barCompleteChar: "\u2588",

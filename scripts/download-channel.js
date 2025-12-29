@@ -159,35 +159,49 @@ class DownloadChannel {
       }
       const ids = messages.map((m) => m.id);
       const details = await getMessageDetail(client, channelId, ids);
-      const downloadQueue = [];
       const progressManager = new ProgressManager();
-      let hasDownloads = false;
 
-      for (const msg of details) {
-        if (this.canDownload(msg)) {
-          if (!hasDownloads) {
-            progressManager.start();
-            hasDownloads = true;
+      // Filter to only downloadable messages
+      const downloadableMessages = details.filter((msg) => this.canDownload(msg));
+
+      if (downloadableMessages.length > 0) {
+        progressManager.start();
+
+        // Concurrent pool: always maintain MAX_PARALLEL_DOWNLOAD active downloads
+        const activeDownloads = new Set();
+        let index = 0;
+
+        const startNextDownload = () => {
+          if (index >= downloadableMessages.length) return null;
+
+          const msg = downloadableMessages[index++];
+          const downloadPromise = downloadMessageMedia(
+            client,
+            msg,
+            getMediaPath(msg, this.outputFolder),
+            progressManager
+          ).finally(() => {
+            activeDownloads.delete(downloadPromise);
+          });
+
+          activeDownloads.add(downloadPromise);
+          return downloadPromise;
+        };
+
+        // Start initial batch of downloads
+        while (activeDownloads.size < MAX_PARALLEL_DOWNLOAD && index < downloadableMessages.length) {
+          startNextDownload();
+        }
+
+        // As each download completes, start a new one
+        while (activeDownloads.size > 0) {
+          await Promise.race(activeDownloads);
+          // Start new downloads to maintain pool size
+          while (activeDownloads.size < MAX_PARALLEL_DOWNLOAD && index < downloadableMessages.length) {
+            startNextDownload();
           }
-          downloadQueue.push(
-            downloadMessageMedia(
-              client,
-              msg,
-              getMediaPath(msg, this.outputFolder),
-              progressManager
-            )
-          );
         }
-        if (downloadQueue.length >= MAX_PARALLEL_DOWNLOAD) {
-          await Promise.all(downloadQueue);
-          downloadQueue.length = 0;
-          await wait(BATCH_WAIT_SECONDS);
-        }
-      }
 
-      await Promise.all(downloadQueue);
-
-      if (hasDownloads) {
         progressManager.stop();
       }
       this.recordMessages(details);
