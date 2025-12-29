@@ -3,6 +3,7 @@ const { getAllDialogs, getDialogName } = require("../modules/dialoges");
 const { downloadMessageMedia, getMessageDetail } = require("../modules/messages");
 const { getMediaPath, wait, createChannelFolderName } = require("../utils/helper");
 const logger = require("../utils/logger");
+const ProgressManager = require("../utils/progress");
 const { initAuth } = require("../modules/auth");
 const { selectInput } = require("../utils/input-helper");
 const path = require("path");
@@ -42,14 +43,19 @@ class ListenChannel {
       const details = await getMessageDetail(this.client, this.channelId, [
         messageId,
       ]);
+      const progressManager = new ProgressManager();
+      progressManager.start();
+
       for (const msg of details) {
         await downloadMessageMedia(
           this.client,
           msg,
-          getMediaPath(msg, outputFolder)
+          getMediaPath(msg, outputFolder),
+          progressManager
         );
-        logger.info(`Downloaded media from message: ${msg.id}`);
       }
+
+      progressManager.stop();
     } else {
       logger.info("No media found in the message");
     }

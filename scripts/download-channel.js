@@ -21,13 +21,14 @@ const {
   getLastSelection,
 } = require("../utils/file-helper");
 const logger = require("../utils/logger");
+const ProgressManager = require("../utils/progress");
 const { getDialogName, getAllDialogs } = require("../modules/dialoges");
 const {
   downloadOptionInput,
   selectInput,
 } = require("../utils/input-helper");
 
-const MAX_PARALLEL_DOWNLOAD = 2;
+const MAX_PARALLEL_DOWNLOAD = 5;
 const MESSAGE_LIMIT = 10;
 const BATCH_WAIT_SECONDS = 8;
 const ITERATION_WAIT_SECONDS = 3;
@@ -159,19 +160,23 @@ class DownloadChannel {
       const ids = messages.map((m) => m.id);
       const details = await getMessageDetail(client, channelId, ids);
       const downloadQueue = [];
+      const progressManager = new ProgressManager();
+      let hasDownloads = false;
 
       for (const msg of details) {
         if (this.canDownload(msg)) {
-          logger.info(`Downloading ${msg.id}`);
+          if (!hasDownloads) {
+            progressManager.start();
+            hasDownloads = true;
+          }
           downloadQueue.push(
             downloadMessageMedia(
               client,
               msg,
-              getMediaPath(msg, this.outputFolder)
+              getMediaPath(msg, this.outputFolder),
+              progressManager
             )
           );
-        } else {
-          // logger.info(`No media to download for ${msg.id}`);
         }
         if (downloadQueue.length >= MAX_PARALLEL_DOWNLOAD) {
           await Promise.all(downloadQueue);
@@ -181,6 +186,10 @@ class DownloadChannel {
       }
 
       await Promise.all(downloadQueue);
+
+      if (hasDownloads) {
+        progressManager.stop();
+      }
       this.recordMessages(details);
       updateLastSelection({
         messageOffsetId: messages[messages.length - 1].id,

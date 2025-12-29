@@ -32,7 +32,10 @@ const getMessageDetail = async (client, channelId, messageIds) => {
   }
 };
 
-const downloadMessageMedia = async (client, message, mediaPath, retryCount = 0) => {
+const downloadMessageMedia = async (client, message, mediaPath, progressManager = null, retryCount = 0) => {
+  const downloadId = message.id;
+  const filename = path.basename(mediaPath);
+
   try {
     if (!client || !message || !mediaPath) {
       logger.error("Client, message, and mediaPath are required");
@@ -61,15 +64,32 @@ const downloadMessageMedia = async (client, message, mediaPath, retryCount = 0) 
         );
       }
 
+      // Register with progress manager if available (only on first attempt)
+      if (progressManager && retryCount === 0) {
+        const totalBytes =
+          message.media?.document?.size ||
+          message.media?.photo?.sizes?.slice(-1)[0]?.size ||
+          0;
+        progressManager.startDownload(downloadId, filename, totalBytes);
+      }
+
       await client.downloadMedia(message, {
         outputFile: mediaPath,
         progressCallback: (downloaded, total) => {
-          const name = path.basename(mediaPath);
-          if (total === downloaded) {
-            logger.success(`File ${name} downloaded successfully`);
+          if (progressManager) {
+            progressManager.updateProgress(downloadId, downloaded, total);
+          }
+          // Keep existing completion log for non-progress mode
+          if (!progressManager && total === downloaded) {
+            logger.success(`File ${filename} downloaded successfully`);
           }
         },
       });
+
+      // Mark complete
+      if (progressManager) {
+        progressManager.completeDownload(downloadId, true);
+      }
 
       return true;
     } else {
@@ -97,10 +117,16 @@ const downloadMessageMedia = async (client, message, mediaPath, retryCount = 0) 
         waitTime = err.seconds + 1; // Add 1 second buffer
       }
 
-      const fileName = path.basename(mediaPath);
-      logger.warn(`Download failed for ${fileName}, retrying in ${waitTime}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      if (!progressManager) {
+        logger.warn(`Download failed for ${filename}, retrying in ${waitTime}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      }
       await wait(waitTime);
-      return downloadMessageMedia(client, message, mediaPath, retryCount + 1);
+      return downloadMessageMedia(client, message, mediaPath, progressManager, retryCount + 1);
+    }
+
+    // Mark as failed in progress manager
+    if (progressManager) {
+      progressManager.failDownload(downloadId);
     }
 
     logger.error(`Error downloading message ${message.id}: ${errorMessage}`);
