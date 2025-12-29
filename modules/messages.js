@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const logger = require("../utils/logger");
 const { circularStringify, wait } = require("../utils/helper");
+const { resumableDownload, getPartialFileSize, getPartialFilePath } = require("./resumable-download");
 
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [5, 15, 30, 60, 120]; // seconds
@@ -64,26 +65,34 @@ const downloadMessageMedia = async (client, message, mediaPath, progressManager 
         );
       }
 
+      // Get total file size for progress tracking
+      const totalBytes =
+        message.media?.document?.size ||
+        message.media?.photo?.sizes?.slice(-1)[0]?.size ||
+        0;
+
+      // Check for existing partial download to adjust initial progress
+      const partialPath = getPartialFilePath(mediaPath);
+      const existingBytes = getPartialFileSize(partialPath);
+
       // Register with progress manager if available (only on first attempt)
       if (progressManager && retryCount === 0) {
-        const totalBytes =
-          message.media?.document?.size ||
-          message.media?.photo?.sizes?.slice(-1)[0]?.size ||
-          0;
         progressManager.startDownload(downloadId, filename, totalBytes);
+        // If resuming, update progress to show existing bytes
+        if (existingBytes > 0) {
+          progressManager.updateProgress(downloadId, existingBytes, totalBytes);
+        }
       }
 
-      await client.downloadMedia(message, {
-        outputFile: mediaPath,
-        progressCallback: (downloaded, total) => {
-          if (progressManager) {
-            progressManager.updateProgress(downloadId, downloaded, total);
-          }
-          // Keep existing completion log for non-progress mode
-          if (!progressManager && total === downloaded) {
-            logger.success(`File ${filename} downloaded successfully`);
-          }
-        },
+      // Use resumable download
+      await resumableDownload(client, message, mediaPath, (downloaded, total) => {
+        if (progressManager) {
+          progressManager.updateProgress(downloadId, downloaded, total);
+        }
+        // Keep existing completion log for non-progress mode
+        if (!progressManager && total > 0 && total === downloaded) {
+          logger.success(`File ${filename} downloaded successfully`);
+        }
       });
 
       // Mark complete

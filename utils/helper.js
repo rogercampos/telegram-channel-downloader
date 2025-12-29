@@ -62,6 +62,7 @@ const checkFileExist = (message, outputFolder) => {
   if (!message || !message.media) return false;
 
   let fileName = `${message.id}_file`;
+  let hasFileNameFromDocument = false;
   const { media } = message;
 
   if (media.document) {
@@ -72,16 +73,21 @@ const checkFileExist = (message, outputFolder) => {
       );
       if (fileNameObj) {
         fileName = fileNameObj.fileName;
+        hasFileNameFromDocument = true;
       } else {
         const ext = mimeDB[media.document.mimeType]?.extensions[0];
         if (ext) fileName += `.${ext}`;
+        hasFileNameFromDocument = true;
       }
     }
   }
 
-  if (media.video) fileName += ".mp4";
-  if (media.audio) fileName += ".mp3";
-  if (media.photo) fileName += ".jpg";
+  // Only add extensions if we didn't get a filename from document attributes
+  if (!hasFileNameFromDocument) {
+    if (media.video) fileName += ".mp4";
+    if (media.audio) fileName += ".mp3";
+    if (media.photo) fileName += ".jpg";
+  }
 
   const folderType = filterString(getMediaType(message));
   const filePath = path.join(outputFolder, folderType, fileName);
@@ -94,6 +100,7 @@ const getMediaPath = (message, outputFolder) => {
   if (!message || !message.media) return "unknown";
 
   let fileName = `${message.id}_file`;
+  let hasFileNameFromDocument = false;
   const { media } = message;
 
   if (media.document) {
@@ -104,16 +111,21 @@ const getMediaPath = (message, outputFolder) => {
       );
       if (fileNameObj) {
         fileName = fileNameObj.fileName;
+        hasFileNameFromDocument = true;
       } else {
         const ext = mimeDB[media.document.mimeType]?.extensions[0];
         if (ext) fileName += `.${ext}`;
+        hasFileNameFromDocument = true;
       }
     }
   }
 
-  if (media.video) fileName += ".mp4";
-  if (media.audio) fileName += ".mp3";
-  if (media.photo) fileName += ".jpg";
+  // Only add extensions if we didn't get a filename from document attributes
+  if (!hasFileNameFromDocument) {
+    if (media.video) fileName += ".mp4";
+    if (media.audio) fileName += ".mp3";
+    if (media.photo) fileName += ".jpg";
+  }
 
   const folderType = filterString(getMediaType(message));
   const filePath = path.join(outputFolder, folderType, fileName);
