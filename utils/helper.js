@@ -123,10 +123,16 @@ const getMediaPath = (message, outputFolder) => {
   const filePath = path.join(outputFolder, folderType, fileName);
 
   if (fs.existsSync(filePath)) {
-    logMessage.info(`File already exists: ${filePath}, Changing name`);
-    const ext = path.extname(filePath);
-    const baseName = path.basename(filePath, ext);
-    fileName = `${baseName}_${message.id}${ext}`;
+    // Only rename if this is a true collision (different message, same filename)
+    // Skip if filename already contains this message's ID (same message processed again)
+    const filenameHasMessageId = fileName.includes(String(message.id));
+    if (!filenameHasMessageId) {
+      const ext = path.extname(filePath);
+      const baseName = path.basename(filePath, ext);
+      const newFileName = `${baseName}_${message.id}${ext}`;
+      logMessage.info(`File already exists: ${baseName}${ext}, renaming to ${newFileName}`);
+      fileName = newFileName;
+    }
   }
 
   const finalPath = path.join(outputFolder, folderType, fileName);

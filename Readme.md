@@ -54,21 +54,35 @@ Once the setup is complete, you can start using the Telegram Channel Downloader:
 
 ## CLI
 
-Available Commands
+Run the application using `npm start`:
+
+```bash
+npm start
+```
+
+This launches `download-channel` in interactive mode, prompting you to select a channel and download options.
+
+### Advanced CLI Usage
+
+For additional commands or to pass options directly, use `node cli.js`:
+
+```bash
+node cli.js [script-name] --options
+```
+
+**Available Commands:**
 
 | Script Name               | Description                                                   |
 |---------------------------|---------------------------------------------------------------|
+| `download-channel`         | Download all media from a channel (default)                   |
 | `listen-channel`           | Listen to a channel and download media from incoming messages |
 | `download-selected-message`| Download media from selected messages                         |
-| `download-channel`         | Download all media from a channel                             |
 
-***Using CLI Commands***
+**Example:**
 
 ```bash
-node cli [script-name] --options
+node cli.js listen-channel --channelId=12345
 ```
-
-example `node cli listen-channel --channelId=12345`
 
 ### Date Filtering
 
@@ -83,13 +97,13 @@ The `download-channel` command supports filtering messages by date using the `--
 
 ```bash
 # Download only messages from December 25, 2024 onwards
-node cli download-channel --channelId=12345 --from_date=25/12/2024
+node cli.js download-channel --channelId=12345 --from_date=25/12/2024
 
 # Download only messages up to December 31, 2024
-node cli download-channel --channelId=12345 --until_date=31/12/2024
+node cli.js download-channel --channelId=12345 --until_date=31/12/2024
 
 # Download messages within a specific date range
-node cli download-channel --channelId=12345 --from_date=01/12/2024 --until_date=31/12/2024
+node cli.js download-channel --channelId=12345 --from_date=01/12/2024 --until_date=31/12/2024
 ```
 
 ## Additional Notes

@@ -28,7 +28,7 @@ const {
   selectInput,
 } = require("../utils/input-helper");
 
-const MAX_PARALLEL_DOWNLOAD = 5;
+const MAX_PARALLEL_DOWNLOAD = 3;
 const MESSAGE_LIMIT = 10;
 const BATCH_WAIT_SECONDS = 8;
 const ITERATION_WAIT_SECONDS = 3;

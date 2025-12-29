@@ -3,16 +3,11 @@ const channelDownloader = new ChannelDownloader();
 
 const channelId = "";
 const downloadableFiles = {
-  webpage: true,
-  poll: true,
-  geo: true,
-  contact: true,
-  venue: true,
-  sticker: true,
   image: true,
   video: true,
   audio: true,
-  pdf: true,
+  sticker: true,
+  document: true,
 };
 
 (async () => {
