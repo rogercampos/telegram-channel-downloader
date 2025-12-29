@@ -242,6 +242,46 @@ const appendToJSONArrayFile = (filePath, dataToAppend) => {
   }
 };
 
+/**
+ * Sanitizes a string for use as a folder name
+ * Removes/replaces invalid filesystem characters
+ * @param {string} name - The name to sanitize
+ * @param {number} maxLength - Maximum length for the sanitized name
+ * @returns {string} Sanitized folder name
+ */
+const sanitizeFolderName = (name, maxLength = 50) => {
+  if (!name || typeof name !== "string") return "";
+
+  return name
+    .trim()
+    .replace(/[\/\\:*?"<>|]/g, "_") // Replace invalid filesystem chars
+    .replace(/\s+/g, "_")           // Replace spaces with underscore
+    .replace(/_+/g, "_")            // Collapse multiple underscores
+    .replace(/^_|_$/g, "")          // Remove leading/trailing underscores
+    .substring(0, maxLength);
+};
+
+/**
+ * Creates a safe folder name from channel name and ID
+ * Format: SanitizedName_SanitizedId (e.g., "My_Channel_1002858083105")
+ * @param {string} channelName - The display name of the channel
+ * @param {number|string} channelId - The channel ID (may be negative)
+ * @returns {string} Safe folder name
+ */
+const createChannelFolderName = (channelName, channelId) => {
+  // Sanitize the ID: convert to string and remove leading dash
+  const sanitizedId = String(channelId).replace(/^-/, "");
+
+  // Sanitize the channel name
+  const sanitizedName = sanitizeFolderName(channelName);
+
+  // Combine name and ID, or use fallback if name is empty
+  if (sanitizedName) {
+    return `${sanitizedName}_${sanitizedId}`;
+  }
+  return `channel_${sanitizedId}`;
+};
+
 module.exports = {
   getMediaType,
   checkFileExist,
@@ -253,5 +293,7 @@ module.exports = {
   filterString,
   appendToJSONArrayFile,
   circularStringify,
+  sanitizeFolderName,
+  createChannelFolderName,
   MEDIA_TYPES,
 };

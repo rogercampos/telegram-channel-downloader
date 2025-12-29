@@ -14,6 +14,7 @@ const {
   appendToJSONArrayFile,
   wait,
   parseDateString,
+  createChannelFolderName,
 } = require("../utils/helper");
 const {
   updateLastSelection,
@@ -134,14 +135,16 @@ class DownloadChannel {
    * Recursively fetches and downloads all available media from the channel
    * @param {Object} client The Telegram client instance
    * @param {Number} channelId The channel ID
+   * @param {String} dialogName The channel/dialog name
    * @param {Number} offsetMsgId The message offset
    */
-  async downloadChannel(client, channelId, offsetMsgId = 0) {
+  async downloadChannel(client, channelId, dialogName, offsetMsgId = 0) {
     try {
+      const folderName = createChannelFolderName(dialogName, channelId);
       this.outputFolder = path.join(
         process.cwd(),
         "export",
-        channelId.toString()
+        folderName
       );
       const messages = await getMessages(
         client,
@@ -195,6 +198,7 @@ class DownloadChannel {
       await this.downloadChannel(
         client,
         channelId,
+        dialogName,
         messages[messages.length - 1].id
       );
     } catch (err) {
@@ -275,7 +279,7 @@ class DownloadChannel {
 
       const dialogName = await getDialogName(client, channelId);
       logger.info(`Downloading media from channel ${dialogName}`);
-      await this.downloadChannel(client, channelId, messageOffsetId);
+      await this.downloadChannel(client, channelId, dialogName, messageOffsetId);
     } catch (err) {
       logger.error("An error occurred:");
       console.error(err);

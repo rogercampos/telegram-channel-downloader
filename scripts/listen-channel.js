@@ -1,7 +1,7 @@
 const { NewMessage } = require("telegram/events");
 const { getAllDialogs, getDialogName } = require("../modules/dialoges");
 const { downloadMessageMedia, getMessageDetail } = require("../modules/messages");
-const { getMediaPath, wait } = require("../utils/helper");
+const { getMediaPath, wait, createChannelFolderName } = require("../utils/helper");
 const logger = require("../utils/logger");
 const { initAuth } = require("../modules/auth");
 const { selectInput } = require("../utils/input-helper");
@@ -10,6 +10,7 @@ const path = require("path");
 class ListenChannel {
   constructor() {
     this.channelId = null;
+    this.dialogName = null;
     this.client = null;
     this.handleNewMessage = this.handleNewMessage.bind(this);
   }
@@ -31,10 +32,11 @@ class ListenChannel {
     const messageId = event.message?.id;
     const isMedia = !!event.message?.media;
     if (isMedia) {
+      const folderName = createChannelFolderName(this.dialogName, this.channelId);
       const outputFolder = path.join(
         process.cwd(),
         "export",
-        this.channelId.toString()
+        folderName
       );
 
       const details = await getMessageDetail(this.client, this.channelId, [
@@ -74,8 +76,8 @@ class ListenChannel {
       this.channelId = channelId;
       this.client = client;
 
-      const dialogName = await getDialogName(client, channelId);
-      logger.info(`Listening to: ${dialogName}`);
+      this.dialogName = await getDialogName(client, channelId);
+      logger.info(`Listening to: ${this.dialogName}`);
       client.addEventHandler(this.handleNewMessage, new NewMessage({}));
     } catch (err) {
       logger.error("An error occurred:");
