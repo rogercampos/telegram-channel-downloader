@@ -1,7 +1,6 @@
-const fs = require("fs");
 const path = require("path");
 const logger = require("../utils/logger");
-const { circularStringify, wait } = require("../utils/helper");
+const { wait } = require("../utils/helper");
 const { resumableDownload, getPartialFileSize, getPartialFilePath } = require("./resumable-download");
 
 const MAX_RETRIES = 5;
@@ -44,25 +43,12 @@ const downloadMessageMedia = async (client, message, mediaPath, progressManager 
     }
 
     if (message.media) {
-      if (message.media.webpage) {
-        const url = message.media.webpage.url;
-        if (url) {
-          const urlPath = path.join(mediaPath, `../${message.id}_url.txt`);
-          fs.writeFileSync(urlPath, url);
-        }
+      // Only handle document and photo media types, skip others silently
+      const hasDocument = Boolean(message.media.document);
+      const hasPhoto = Boolean(message.media.photo);
 
-        mediaPath = path.join(
-          mediaPath,
-          `../${message?.media?.webpage?.id}_image.jpeg`
-        );
-      }
-
-      if (message.media.poll) {
-        const pollPath = path.join(mediaPath, `../${message.id}_poll.json`);
-        fs.writeFileSync(
-          pollPath,
-          circularStringify(message.media.poll, null, 2)
-        );
+      if (!hasDocument && !hasPhoto) {
+        return false;
       }
 
       // Get total file size for progress tracking

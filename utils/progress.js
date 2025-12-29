@@ -17,7 +17,7 @@ class ProgressManager {
       {
         // Reset color and set to white at start of each line
         format:
-          "\x1b[0m\x1b[37m{filename} [{bar}] {percentage}% | {downloaded}/{total}\x1b[0m",
+          "\x1b[0m\x1b[37m{filename} [{bar}] {percentage}% | {downloaded}/{totalSize}\x1b[0m",
         clearOnComplete: false,
         hideCursor: true,
         barCompleteChar: "\u2588",
@@ -43,7 +43,7 @@ class ProgressManager {
     const bar = this.multiBar.create(totalBytes || 100, 0, {
       filename: this.truncateFilename(filename, 30),
       downloaded: "0 B",
-      total: totalBytes ? this.formatBytes(totalBytes) : "? B",
+      totalSize: totalBytes ? this.formatBytes(totalBytes) : "? B",
     });
 
     this.bars.set(downloadId, { bar, totalBytes, filename });
@@ -70,7 +70,7 @@ class ProgressManager {
 
     entry.bar.update(downloadedBytes, {
       downloaded: this.formatBytes(downloadedBytes),
-      total: this.formatBytes(total),
+      totalSize: this.formatBytes(total),
     });
   }
 
@@ -86,7 +86,7 @@ class ProgressManager {
     if (success && entry.totalBytes) {
       entry.bar.update(entry.totalBytes, {
         downloaded: this.formatBytes(entry.totalBytes),
-        total: this.formatBytes(entry.totalBytes),
+        totalSize: this.formatBytes(entry.totalBytes),
       });
     }
 

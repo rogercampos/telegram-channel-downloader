@@ -79,6 +79,12 @@ class DownloadChannel {
    */
   canDownload(message) {
     if (!this.hasMedia(message)) return false;
+
+    // Only support document and photo media types
+    const hasDocument = Boolean(message.media.document);
+    const hasPhoto = Boolean(message.media.photo);
+    if (!hasDocument && !hasPhoto) return false;
+
     if (!this.isWithinDateRange(message)) return false;
     const mediaType = getMediaType(message);
     const mediaPath = getMediaPath(message, this.outputFolder);

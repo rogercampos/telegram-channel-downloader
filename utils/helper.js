@@ -2,16 +2,11 @@ const mimeDB = require("mime-db");
 const fs = require("fs");
 const path = require("path");
 
-// Define media types
+// Define media types (only document and photo are supported)
 const MEDIA_TYPES = {
   IMAGE: "image",
   VIDEO: "video",
   AUDIO: "audio",
-  WEBPAGE: "webpage",
-  POLL: "poll",
-  GEO: "geo",
-  VENUE: "venue",
-  CONTACT: "contact",
   STICKER: "sticker",
   DOCUMENT: "document",
   OTHERS: "others",
@@ -29,20 +24,16 @@ const consoleColors = {
   reset: "\x1b[0m",
 };
 
-// Get the media type of a message
+// Get the media type of a message (only document and photo are supported)
 const getMediaType = (message) => {
   if (!message.media) return MEDIA_TYPES.OTHERS;
 
   const { media } = message;
+
+  // Photos
   if (media.photo) return MEDIA_TYPES.IMAGE;
-  if (media.video) return MEDIA_TYPES.VIDEO;
-  if (media.audio) return MEDIA_TYPES.AUDIO;
-  if (media.webpage) return MEDIA_TYPES.WEBPAGE;
-  if (media.poll) return MEDIA_TYPES.POLL;
-  if (media.geo) return MEDIA_TYPES.GEO;
-  if (media.contact) return MEDIA_TYPES.CONTACT;
-  if (media.venue) return MEDIA_TYPES.VENUE;
-  if (media.sticker) return MEDIA_TYPES.STICKER;
+
+  // Documents (videos, audio, files, stickers, etc.)
   if (media.document) {
     const { mimeType } = media.document;
     if (mimeType) {
@@ -54,6 +45,7 @@ const getMediaType = (message) => {
     return MEDIA_TYPES.DOCUMENT;
   }
 
+  // All other media types (webpage, poll, geo, contact, venue) are not supported
   return MEDIA_TYPES.OTHERS;
 };
 
