@@ -25,8 +25,10 @@ const {
   selectInput,
 } = require("../utils/input-helper");
 
-const MAX_PARALLEL_DOWNLOAD = 5;
+const MAX_PARALLEL_DOWNLOAD = 2;
 const MESSAGE_LIMIT = 10;
+const BATCH_WAIT_SECONDS = 8;
+const ITERATION_WAIT_SECONDS = 3;
 
 /**
  * Handles downloading media from a Telegram channel
@@ -153,10 +155,9 @@ class DownloadChannel {
           // logger.info(`No media to download for ${msg.id}`);
         }
         if (downloadQueue.length >= MAX_PARALLEL_DOWNLOAD) {
-          logger.info(`Processing ${MAX_PARALLEL_DOWNLOAD} downloads`);
           await Promise.all(downloadQueue);
           downloadQueue.length = 0;
-          await wait(3);
+          await wait(BATCH_WAIT_SECONDS);
         }
       }
 
@@ -166,7 +167,7 @@ class DownloadChannel {
         messageOffsetId: messages[messages.length - 1].id,
       });
 
-      await wait(1);
+      await wait(ITERATION_WAIT_SECONDS);
       await this.downloadChannel(
         client,
         channelId,

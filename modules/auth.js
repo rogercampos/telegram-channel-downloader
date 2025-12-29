@@ -1,4 +1,6 @@
 const { TelegramClient } = require("telegram");
+const { Logger } = require("telegram/extensions");
+const { LogLevel } = require("telegram/extensions/Logger");
 const { updateCredentials, getCredentials } = require("../utils/file-helper");
 const { StringSession } = require("telegram/sessions");
 const { logMessage } = require("../utils/helper");
@@ -26,6 +28,7 @@ const stringSession = new StringSession(sessionId || "");
 const initAuth = async (otpPreference = OTP_METHOD.APP) => {
   const client = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
+    baseLogger: new Logger(LogLevel.ERROR),
   });
 
   try {
