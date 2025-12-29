@@ -15,6 +15,7 @@ const {
   wait,
   parseDateString,
   createChannelFolderName,
+  getExportDirectory,
 } = require("../utils/helper");
 const {
   updateLastSelection,
@@ -42,11 +43,7 @@ class DownloadChannel {
     this.downloadableFiles = null;
     this.fromDate = null;  // Unix timestamp (seconds)
     this.untilDate = null; // Unix timestamp (seconds)
-
-    const exportPath = path.resolve(process.cwd(), "./export");
-    if (!fs.existsSync(exportPath)) {
-      fs.mkdirSync(exportPath);
-    }
+    this.exportPath = getExportDirectory();
   }
 
   static description() {
@@ -148,11 +145,7 @@ class DownloadChannel {
   async downloadChannel(client, channelId, dialogName, offsetMsgId = 0) {
     try {
       const folderName = createChannelFolderName(dialogName, channelId);
-      this.outputFolder = path.join(
-        process.cwd(),
-        "export",
-        folderName
-      );
+      this.outputFolder = path.join(this.exportPath, folderName);
       const messages = await getMessages(
         client,
         channelId,

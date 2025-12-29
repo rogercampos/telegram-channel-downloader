@@ -1,12 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const { logMessage } = require("./helper");
+const { logMessage, getExportDirectory } = require("./helper");
 
 const CONFIG_FILE = path.join(__dirname, "../config.json");
-const LAST_SELECTION_FILE = path.join(
-  __dirname,
-  "../export/last_selection.json"
-);
+const getLastSelectionFile = () => path.join(getExportDirectory(), "last_selection.json");
 
 /**
  * Reads the content of a file synchronously.
@@ -82,7 +79,7 @@ const getCredentials = () => {
  */
 const getLastSelection = () => {
   try {
-    const data = readFileSync(LAST_SELECTION_FILE, false);
+    const data = readFileSync(getLastSelectionFile(), false);
     return JSON.parse(data);
   } catch (_) {
     return {};
@@ -101,7 +98,7 @@ const getLastSelection = () => {
 const updateLastSelection = (object) => {
   try {
     const last = { ...getLastSelection(), ...object };
-    writeFileSync(LAST_SELECTION_FILE, last);
+    writeFileSync(getLastSelectionFile(), last);
   } catch (err) {
     logMessage.error("Failed to update last selection", err);
   }

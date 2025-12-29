@@ -2,7 +2,6 @@
 // example command script
 // - node cli script-name --option1=value1 --option2=value2
 
-const fs = require("fs");
 const path = require("path");
 const { glob } = require("glob");
 const logger = require("./utils/logger");
@@ -120,10 +119,6 @@ async function runCommand(commandPath, options) {
  */
 
 (async () => {
-  if (!fs.existsSync("./export")) {
-    fs.mkdirSync("./export");
-  }
-
   const availableCommands = loadCommands(commandFiles);
   const { scriptSignature, options } = parseArguments(process.argv);
 

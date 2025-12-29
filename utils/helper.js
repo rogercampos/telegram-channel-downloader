@@ -1,6 +1,7 @@
 const mimeDB = require("mime-db");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 // Define media types (only document and photo are supported)
 const MEDIA_TYPES = {
@@ -292,6 +293,21 @@ const createChannelFolderName = (channelName, channelId) => {
   return `channel_${sanitizedId}`;
 };
 
+/**
+ * Gets the export directory path.
+ * Uses the OS Downloads folder if available, otherwise falls back to home directory.
+ * @returns {string} The export directory path
+ */
+const getExportDirectory = () => {
+  const homeDir = os.homedir();
+  const downloadsDir = path.join(homeDir, "Downloads");
+
+  if (fs.existsSync(downloadsDir)) {
+    return downloadsDir;
+  }
+  return homeDir;
+};
+
 module.exports = {
   getMediaType,
   checkFileExist,
@@ -305,5 +321,6 @@ module.exports = {
   circularStringify,
   sanitizeFolderName,
   createChannelFolderName,
+  getExportDirectory,
   MEDIA_TYPES,
 };

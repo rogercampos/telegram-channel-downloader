@@ -50,7 +50,7 @@ Once the setup is complete, you can start using the Telegram Channel Downloader:
 
 5. **Wait for Download**: The script will start downloading all available media files and messages from the specified channel, group, or user. Depending on the size of the content, this process may take some time.
 
-6. **Access Downloaded Files**: Once the download is complete, you can find the downloaded media files and messages in the `export/` directory within the Telegram Channel Downloader directory.
+6. **Access Downloaded Files**: Once the download is complete, you can find the downloaded media files in your system's Downloads folder (or home directory if Downloads is unavailable). Each channel creates its own folder named `ChannelName_ChannelId`.
 
 ## CLI
 
@@ -109,7 +109,7 @@ node cli.js download-channel --channelId=12345 --from_date=01/12/2024 --until_da
 ## Additional Notes
 
 * **Session Handling**: The `sessionId` field in the `config.json` file will be automatically updated after logging in for the first time. This session ID is used for subsequent logins to avoid re-entering your credentials.
-* **Media Types**: The Telegram Channel Downloader supports downloading various types of media files, including images, videos, audio files, documents, and other attachments shared within the specified channel, group, or user.
+* **Media Types**: The Telegram Channel Downloader supports downloading photos and documents (videos, audio files, stickers, and other file attachments).
 
 ## Contributing
 

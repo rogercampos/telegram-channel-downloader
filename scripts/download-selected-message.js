@@ -2,7 +2,7 @@ const path = require("path");
 const { initAuth } = require("../modules/auth");
 const { getMessageDetail, downloadMessageMedia } = require("../modules/messages");
 const { getDialogName } = require("../modules/dialoges");
-const { logMessage, getMediaPath, createChannelFolderName } = require("../utils/helper");
+const { logMessage, getMediaPath, createChannelFolderName, getExportDirectory } = require("../utils/helper");
 const { textInput } = require("../utils/input-helper");
 
 class DownloadMessage {
@@ -17,11 +17,7 @@ class DownloadMessage {
 
   async downloadMessage(client, channelId, dialogName, messageIds) {
     const folderName = createChannelFolderName(dialogName, channelId);
-    const outputFolder = path.join(
-      process.cwd(),
-      "export",
-      folderName
-    );
+    const outputFolder = path.join(getExportDirectory(), folderName);
     
     const messageArr = await getMessageDetail(client, channelId, messageIds);
     for (const message of messageArr) {

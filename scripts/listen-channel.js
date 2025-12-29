@@ -1,7 +1,7 @@
 const { NewMessage } = require("telegram/events");
 const { getAllDialogs, getDialogName } = require("../modules/dialoges");
 const { downloadMessageMedia, getMessageDetail } = require("../modules/messages");
-const { getMediaPath, wait, createChannelFolderName } = require("../utils/helper");
+const { getMediaPath, wait, createChannelFolderName, getExportDirectory } = require("../utils/helper");
 const logger = require("../utils/logger");
 const ProgressManager = require("../utils/progress");
 const { initAuth } = require("../modules/auth");
@@ -34,11 +34,7 @@ class ListenChannel {
     const isMedia = !!event.message?.media;
     if (isMedia) {
       const folderName = createChannelFolderName(this.dialogName, this.channelId);
-      const outputFolder = path.join(
-        process.cwd(),
-        "export",
-        folderName
-      );
+      const outputFolder = path.join(getExportDirectory(), folderName);
 
       const details = await getMessageDetail(this.client, this.channelId, [
         messageId,
