@@ -70,6 +70,28 @@ node cli [script-name] --options
 
 example `node cli listen-channel --channelId=12345`
 
+### Date Filtering
+
+The `download-channel` command supports filtering messages by date using the `--from_date` and `--until_date` options. Dates must be in `DD/MM/YYYY` format.
+
+| Option        | Description                                      |
+|---------------|--------------------------------------------------|
+| `--from_date` | Only download messages posted on or after this date |
+| `--until_date`| Only download messages posted on or before this date |
+
+**Examples:**
+
+```bash
+# Download only messages from December 25, 2024 onwards
+node cli download-channel --channelId=12345 --from_date=25/12/2024
+
+# Download only messages up to December 31, 2024
+node cli download-channel --channelId=12345 --until_date=31/12/2024
+
+# Download messages within a specific date range
+node cli download-channel --channelId=12345 --from_date=01/12/2024 --until_date=31/12/2024
+```
+
 ## Additional Notes
 
 * **Session Handling**: The `sessionId` field in the `config.json` file will be automatically updated after logging in for the first time. This session ID is used for subsequent logins to avoid re-entering your credentials.

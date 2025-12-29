@@ -13,6 +13,7 @@ const {
   checkFileExist,
   appendToJSONArrayFile,
   wait,
+  parseDateString,
 } = require("../utils/helper");
 const {
   updateLastSelection,
@@ -37,6 +38,8 @@ class DownloadChannel {
   constructor() {
     this.outputFolder = null;
     this.downloadableFiles = null;
+    this.fromDate = null;  // Unix timestamp (seconds)
+    this.untilDate = null; // Unix timestamp (seconds)
 
     const exportPath = path.resolve(process.cwd(), "./export");
     if (!fs.existsSync(exportPath)) {
@@ -57,11 +60,24 @@ class DownloadChannel {
   }
 
   /**
+   * Checks if a message date is within the specified date range
+   * @param {Object} message The Telegram message object with .date property (Unix timestamp)
+   * @returns {boolean} True if message is within range
+   */
+  isWithinDateRange(message) {
+    const msgDate = message.date; // Unix timestamp in seconds
+    if (this.fromDate && msgDate < this.fromDate) return false;
+    if (this.untilDate && msgDate > this.untilDate) return false;
+    return true;
+  }
+
+  /**
    * Determines if a message's media should be downloaded
    * @param {Object} message The Telegram message object
    */
   canDownload(message) {
     if (!this.hasMedia(message)) return false;
+    if (!this.isWithinDateRange(message)) return false;
     const mediaType = getMediaType(message);
     const mediaPath = getMediaPath(message, this.outputFolder);
     const fileExists = checkFileExist(message, this.outputFolder);
@@ -167,6 +183,14 @@ class DownloadChannel {
         messageOffsetId: messages[messages.length - 1].id,
       });
 
+      // Early exit optimization: Messages are in reverse chronological order (newest first).
+      // If the oldest message in this batch is older than from_date, stop fetching more.
+      const oldestMessage = messages[messages.length - 1];
+      if (this.fromDate && oldestMessage.date < this.fromDate) {
+        logger.info("Reached messages older than from_date, stopping");
+        return;
+      }
+
       await wait(ITERATION_WAIT_SECONDS);
       await this.downloadChannel(
         client,
@@ -216,6 +240,32 @@ class DownloadChannel {
   async handle(options = {}) {
     let client;
     await wait(1);
+
+    // Parse date filters
+    if (options.from_date) {
+      this.fromDate = parseDateString(options.from_date, false); // Start of day
+      if (!this.fromDate) {
+        logger.error(`Invalid from_date format: "${options.from_date}". Expected DD/MM/YYYY`);
+        process.exit(1);
+      }
+      logger.info(`Filtering messages from: ${options.from_date}`);
+    }
+
+    if (options.until_date) {
+      this.untilDate = parseDateString(options.until_date, true); // End of day
+      if (!this.untilDate) {
+        logger.error(`Invalid until_date format: "${options.until_date}". Expected DD/MM/YYYY`);
+        process.exit(1);
+      }
+      logger.info(`Filtering messages until: ${options.until_date}`);
+    }
+
+    // Validate date range
+    if (this.fromDate && this.untilDate && this.fromDate > this.untilDate) {
+      logger.error("from_date cannot be after until_date");
+      process.exit(1);
+    }
+
     try {
       client = await initAuth();
       const { channelId, messageOffsetId } = await this.configureDownload(

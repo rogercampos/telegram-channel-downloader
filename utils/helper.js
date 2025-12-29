@@ -164,6 +164,45 @@ const wait = (seconds) => {
   });
 };
 
+/**
+ * Parses a date string in DD/MM/YYYY format to Unix timestamps
+ * @param {string} dateStr - Date string in DD/MM/YYYY format
+ * @param {boolean} endOfDay - If true, returns end of day (23:59:59), otherwise start of day (00:00:00)
+ * @returns {number|null} Unix timestamp in seconds, or null if invalid
+ */
+const parseDateString = (dateStr, endOfDay = false) => {
+  if (!dateStr || typeof dateStr !== "string") return null;
+
+  const regex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const match = dateStr.match(regex);
+
+  if (!match) return null;
+
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10) - 1; // JavaScript months are 0-indexed
+  const year = parseInt(match[3], 10);
+
+  // Validate ranges
+  if (month < 0 || month > 11) return null;
+  if (day < 1 || day > 31) return null;
+
+  const date = new Date(year, month, day);
+
+  // Verify the date is valid (e.g., not Feb 30)
+  if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+    return null;
+  }
+
+  if (endOfDay) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+
+  // Return Unix timestamp in seconds (Telegram uses seconds, not milliseconds)
+  return Math.floor(date.getTime() / 1000);
+};
+
 // Filter a string to remove non-alphanumeric characters
 const filterString = (string) => {
   return string.replace(/[^a-zA-Z0-9]/g, "");
@@ -210,6 +249,7 @@ module.exports = {
   getDialogType,
   logMessage,
   wait,
+  parseDateString,
   filterString,
   appendToJSONArrayFile,
   circularStringify,
