@@ -83,16 +83,20 @@ class DownloadChannel {
     if (!hasDocument && !hasPhoto) return false;
 
     if (!this.isWithinDateRange(message)) return false;
+
+    // Check if file exists BEFORE calling getMediaPath() to avoid log side effects
+    const fileExists = checkFileExist(message, this.outputFolder);
+    if (fileExists) return false;
+
     const mediaType = getMediaType(message);
     const mediaPath = getMediaPath(message, this.outputFolder);
-    const fileExists = checkFileExist(message, this.outputFolder);
     const extension = path.extname(mediaPath).toLowerCase().replace(".", "");
     const allowed =
       this.downloadableFiles?.[mediaType] ||
       this.downloadableFiles?.[extension] ||
       this.downloadableFiles?.all;
 
-    return allowed && !fileExists;
+    return allowed;
   }
 
   /**
