@@ -176,24 +176,32 @@ const wait = (seconds) => {
 };
 
 /**
- * Parses a date string in DD/MM/YYYY format to Unix timestamps
- * @param {string} dateStr - Date string in DD/MM/YYYY format
- * @param {boolean} endOfDay - If true, returns end of day (23:59:59), otherwise start of day (00:00:00)
+ * Parses a date string in DD/MM/YYYY or DD/MM/YYYY HH:MM format to Unix timestamps
+ * @param {string} dateStr - Date string in DD/MM/YYYY or DD/MM/YYYY HH:MM format
+ * @param {boolean} endOfDay - If true and no time provided, returns end of day (23:59:59), otherwise start of day (00:00:00)
  * @returns {number|null} Unix timestamp in seconds, or null if invalid
  */
 const parseDateString = (dateStr, endOfDay = false) => {
   if (!dateStr || typeof dateStr !== "string") return null;
 
-  const regex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const match = dateStr.match(regex);
+  // Try to match DD/MM/YYYY HH:MM format first
+  const regexWithTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/;
+  const matchWithTime = dateStr.match(regexWithTime);
 
-  if (!match) return null;
+  // Fall back to DD/MM/YYYY format
+  const regexDateOnly = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const matchDateOnly = dateStr.match(regexDateOnly);
+
+  if (!matchWithTime && !matchDateOnly) return null;
+
+  const match = matchWithTime || matchDateOnly;
+  const hasTime = !!matchWithTime;
 
   const day = parseInt(match[1], 10);
   const month = parseInt(match[2], 10) - 1; // JavaScript months are 0-indexed
   const year = parseInt(match[3], 10);
 
-  // Validate ranges
+  // Validate date ranges
   if (month < 0 || month > 11) return null;
   if (day < 1 || day > 31) return null;
 
@@ -204,7 +212,16 @@ const parseDateString = (dateStr, endOfDay = false) => {
     return null;
   }
 
-  if (endOfDay) {
+  if (hasTime) {
+    const hours = parseInt(match[4], 10);
+    const minutes = parseInt(match[5], 10);
+
+    // Validate time ranges
+    if (hours < 0 || hours > 23) return null;
+    if (minutes < 0 || minutes > 59) return null;
+
+    date.setHours(hours, minutes, 0, 0);
+  } else if (endOfDay) {
     date.setHours(23, 59, 59, 999);
   } else {
     date.setHours(0, 0, 0, 0);

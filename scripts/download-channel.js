@@ -273,7 +273,7 @@ class DownloadChannel {
     if (options.from_date) {
       this.fromDate = parseDateString(options.from_date, false); // Start of day
       if (!this.fromDate) {
-        logger.error(`Invalid from_date format: "${options.from_date}". Expected DD/MM/YYYY`);
+        logger.error(`Invalid from_date format: "${options.from_date}". Expected DD/MM/YYYY or DD/MM/YYYY HH:MM`);
         process.exit(1);
       }
       logger.info(`Filtering messages from: ${options.from_date}`);
@@ -282,7 +282,7 @@ class DownloadChannel {
     if (options.until_date) {
       this.untilDate = parseDateString(options.until_date, true); // End of day
       if (!this.untilDate) {
-        logger.error(`Invalid until_date format: "${options.until_date}". Expected DD/MM/YYYY`);
+        logger.error(`Invalid until_date format: "${options.until_date}". Expected DD/MM/YYYY or DD/MM/YYYY HH:MM`);
         process.exit(1);
       }
       logger.info(`Filtering messages until: ${options.until_date}`);

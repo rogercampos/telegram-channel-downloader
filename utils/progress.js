@@ -41,7 +41,7 @@ class ProgressManager {
     }
 
     const bar = this.multiBar.create(totalBytes || 100, 0, {
-      filename: this.truncateFilename(filename, 30),
+      filename: this.truncateFilename(filename, 50),
       downloaded: "0 B",
       totalSize: totalBytes ? this.formatBytes(totalBytes) : "? B",
     });
@@ -137,7 +137,7 @@ class ProgressManager {
   }
 
   /**
-   * Truncate filename to fit display width
+   * Truncate filename to fit display width, keeping start and end visible
    * @param {string} name - Original filename
    * @param {number} maxLen - Maximum length
    * @returns {string} Truncated filename with padding
@@ -149,15 +149,13 @@ class ProgressManager {
       return name.padEnd(maxLen);
     }
 
-    // Keep extension visible
-    const ext = name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
-    const maxNameLen = maxLen - ext.length - 3; // 3 for "..."
+    // Truncate in the middle, keeping start and end visible
+    const ellipsis = "…";
+    const charsToShow = maxLen - 1; // 1 for ellipsis
+    const startLen = Math.ceil(charsToShow / 2);
+    const endLen = Math.floor(charsToShow / 2);
 
-    if (maxNameLen > 0) {
-      return name.slice(0, maxNameLen) + "..." + ext;
-    }
-
-    return name.slice(0, maxLen - 3) + "...";
+    return name.slice(0, startLen) + ellipsis + name.slice(-endLen);
   }
 }
 
