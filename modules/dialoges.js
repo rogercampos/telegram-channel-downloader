@@ -1,8 +1,7 @@
 const ejs = require('ejs');
 const fs = require("fs");
 const path = require('path');
-const { updateLastSelection } = require("../utils/file-helper");
-const { logMessage, getDialogType, circularStringify, getExportDirectory } = require("../utils/helper");
+const { logMessage, getDialogType, circularStringify, getTrackingDirectory } = require("../utils/helper");
 const { numberInput, textInput, booleanInput } = require('../utils/input-helper');
 
 /**
@@ -35,10 +34,10 @@ const getAllDialogs = async (client, sortByName = true) => {
         const channelTemplateFile = path.resolve(__dirname, '../templates/channels.ejs');
         const renderedHtml = await ejs.renderFile(channelTemplateFile, { channels: dialogList });
 
-        const exportDir = getExportDirectory();
-        fs.writeFileSync(path.join(exportDir, "raw_dialog_list.json"), circularStringify(dialogs, null, 2));
-        fs.writeFileSync(path.join(exportDir, "dialog_list.html"), renderedHtml);
-        fs.writeFileSync(path.join(exportDir, "dialog_list.json"), JSON.stringify(dialogList, null, 2));
+        const trackingDir = getTrackingDirectory();
+        fs.writeFileSync(path.join(trackingDir, "raw_dialog_list.json"), circularStringify(dialogs, null, 2));
+        fs.writeFileSync(path.join(trackingDir, "dialog_list.html"), renderedHtml);
+        fs.writeFileSync(path.join(trackingDir, "dialog_list.json"), JSON.stringify(dialogList, null, 2));
 
         return dialogList;
     } catch (error) {
@@ -64,11 +63,6 @@ const userDialogSelection = async (dialogs) => {
         const selectedChannel = dialogs[selectedChannelNumber - 1];
         const channelId = selectedChannel.id;
         logMessage.info(`Selected channel: ${selectedChannel.name}`);
-
-        updateLastSelection({
-            channelId: channelId,
-            messageOffsetId: 0
-        });
 
         return channelId;
     } catch (error) {
@@ -132,7 +126,7 @@ const searchThroughDialogsWithSearchString = (dialogs, searchString) => {
  */
 const getDialogName = async (client, channelId) => {
     try {
-        const dialogPath = path.join(getExportDirectory(), "dialog_list.json");
+        const dialogPath = path.join(getTrackingDirectory(), "dialog_list.json");
         if(!fs.existsSync(dialogPath)) {
             await getAllDialogs(client);
             process.exit(0);

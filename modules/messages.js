@@ -32,7 +32,7 @@ const getMessageDetail = async (client, channelId, messageIds) => {
   }
 };
 
-const downloadMessageMedia = async (client, message, mediaPath, progressManager = null, retryCount = 0) => {
+const downloadMessageMedia = async (client, message, mediaPath, channelId = null, progressManager = null, retryCount = 0) => {
   const downloadId = message.id;
   const filename = path.basename(mediaPath);
 
@@ -96,6 +96,20 @@ const downloadMessageMedia = async (client, message, mediaPath, progressManager 
     const errorMessage = err.errorMessage || err.message || "";
     const errorCode = err.code || 0;
 
+    // Handle FILE_REFERENCE_EXPIRED by re-fetching the message
+    if (errorMessage.includes("FILE_REFERENCE_EXPIRED") && channelId && retryCount < MAX_RETRIES) {
+      logger.warn(`File reference expired for ${filename}, refreshing...`);
+      try {
+        const refreshedMessages = await getMessageDetail(client, channelId, [message.id]);
+        if (refreshedMessages && refreshedMessages[0]) {
+          await wait(2); // Brief wait before retry
+          return downloadMessageMedia(client, refreshedMessages[0], mediaPath, channelId, progressManager, retryCount + 1);
+        }
+      } catch (refreshErr) {
+        logger.error(`Failed to refresh message: ${refreshErr.message}`);
+      }
+    }
+
     // Check if we should retry (timeout, flood wait, or server errors)
     const isRetryable =
       errorCode === -503 || // Timeout
@@ -116,7 +130,7 @@ const downloadMessageMedia = async (client, message, mediaPath, progressManager 
         logger.warn(`Download failed for ${filename}, retrying in ${waitTime}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
       }
       await wait(waitTime);
-      return downloadMessageMedia(client, message, mediaPath, progressManager, retryCount + 1);
+      return downloadMessageMedia(client, message, mediaPath, channelId, progressManager, retryCount + 1);
     }
 
     // Mark as failed in progress manager

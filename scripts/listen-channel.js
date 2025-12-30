@@ -47,6 +47,7 @@ class ListenChannel {
           this.client,
           msg,
           getMediaPath(msg, outputFolder),
+          this.channelId,
           progressManager
         );
       }

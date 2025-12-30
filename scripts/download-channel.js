@@ -30,7 +30,7 @@ const {
 } = require("../utils/input-helper");
 
 const MAX_PARALLEL_DOWNLOAD = 3;
-const MESSAGE_LIMIT = 10;
+const MESSAGE_LIMIT = 50;
 const BATCH_WAIT_SECONDS = 8;
 const ITERATION_WAIT_SECONDS = 3;
 
@@ -166,47 +166,43 @@ class DownloadChannel {
       if (downloadableMessages.length > 0) {
         progressManager.start();
 
-        // Concurrent pool: always maintain MAX_PARALLEL_DOWNLOAD active downloads
-        const activeDownloads = new Set();
-        let index = 0;
+        // Process in batches of MAX_PARALLEL_DOWNLOAD
+        for (let i = 0; i < downloadableMessages.length; i += MAX_PARALLEL_DOWNLOAD) {
+          const batch = downloadableMessages.slice(i, i + MAX_PARALLEL_DOWNLOAD);
 
-        const startNextDownload = () => {
-          if (index >= downloadableMessages.length) return null;
+          // Download all in batch concurrently
+          const results = await Promise.all(
+            batch.map((msg) =>
+              downloadMessageMedia(
+                client,
+                msg,
+                getMediaPath(msg, this.outputFolder),
+                channelId,
+                progressManager
+              )
+            )
+          );
 
-          const msg = downloadableMessages[index++];
-          const downloadPromise = downloadMessageMedia(
-            client,
-            msg,
-            getMediaPath(msg, this.outputFolder),
-            progressManager
-          ).finally(() => {
-            activeDownloads.delete(downloadPromise);
-          });
+          // Check if all downloads in this batch succeeded
+          const allSucceeded = results.every((success) => success);
 
-          activeDownloads.add(downloadPromise);
-          return downloadPromise;
-        };
-
-        // Start initial batch of downloads
-        while (activeDownloads.size < MAX_PARALLEL_DOWNLOAD && index < downloadableMessages.length) {
-          startNextDownload();
-        }
-
-        // As each download completes, start a new one
-        while (activeDownloads.size > 0) {
-          await Promise.race(activeDownloads);
-          // Start new downloads to maintain pool size
-          while (activeDownloads.size < MAX_PARALLEL_DOWNLOAD && index < downloadableMessages.length) {
-            startNextDownload();
+          if (allSucceeded) {
+            // Update offset to the oldest message in this batch
+            const oldestInBatch = batch[batch.length - 1];
+            updateLastSelection(folderName, {
+              messageOffsetId: oldestInBatch.id,
+            });
+          } else {
+            // Stop processing - don't advance offset past failed downloads
+            progressManager.stop();
+            logger.warn("Some downloads failed, stopping to retry on next run");
+            return;
           }
         }
 
         progressManager.stop();
       }
       this.recordMessages(details);
-      updateLastSelection({
-        messageOffsetId: messages[messages.length - 1].id,
-      });
 
       // Early exit optimization: Messages are in reverse chronological order (newest first).
       // If the oldest message in this batch is older than from_date, stop fetching more.
@@ -235,29 +231,31 @@ class DownloadChannel {
     if (!channelId) {
       logger.info("Please select a channel to download media from");
       const allChannels = await getAllDialogs(client);
-      const options = allChannels.map((d) => ({
+      const channelOptions = allChannels.map((d) => ({
         name: d.name,
         value: d.id,
       }));
 
       const selectedChannel = await selectInput(
         "Please select a channel",
-        options
+        channelOptions
       );
       channelId = selectedChannel;
     }
     if (!downloadableFiles) downloadableFiles = await downloadOptionInput();
 
     this.downloadableFiles = downloadableFiles;
+    return { channelId };
+  }
 
-    const lastSelection = getLastSelection();
-    let messageOffsetId = lastSelection.messageOffsetId || 0;
-
-    if (Number(lastSelection.channelId) !== Number(channelId)) {
-      messageOffsetId = 0;
-    }
-    updateLastSelection({ messageOffsetId, channelId });
-    return { channelId, messageOffsetId };
+  /**
+   * Gets the message offset for a channel from its tracking file
+   * @param {string} folderName The channel folder name
+   * @returns {number} The message offset ID
+   */
+  getMessageOffset(folderName) {
+    const lastSelection = getLastSelection(folderName);
+    return lastSelection.messageOffsetId || 0;
   }
 
   /**
@@ -294,12 +292,12 @@ class DownloadChannel {
 
     try {
       client = await initAuth();
-      const { channelId, messageOffsetId } = await this.configureDownload(
-        options,
-        client
-      );
+      const { channelId } = await this.configureDownload(options, client);
 
       const dialogName = await getDialogName(client, channelId);
+      const folderName = createChannelFolderName(dialogName, channelId);
+      const messageOffsetId = this.getMessageOffset(folderName);
+
       logger.info(`Downloading media from channel ${dialogName}`);
       await this.downloadChannel(client, channelId, dialogName, messageOffsetId);
     } catch (err) {

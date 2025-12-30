@@ -21,10 +21,11 @@ class DownloadMessage {
     
     const messageArr = await getMessageDetail(client, channelId, messageIds);
     for (const message of messageArr) {
-      downloadMessageMedia(
+      await downloadMessageMedia(
         client,
         message,
-        getMediaPath(message, outputFolder)
+        getMediaPath(message, outputFolder),
+        channelId
       );
     }
     logMessage.success("Done with downloading messages");

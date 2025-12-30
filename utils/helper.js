@@ -308,6 +308,32 @@ const getExportDirectory = () => {
   return homeDir;
 };
 
+/**
+ * Gets the tracking directory path for storing state/metadata files.
+ * Creates a hidden .telegram-channel-downloader folder in the export directory.
+ * @returns {string} The tracking directory path
+ */
+const getTrackingDirectory = () => {
+  const trackingDir = path.join(getExportDirectory(), ".telegram-channel-downloader");
+  if (!fs.existsSync(trackingDir)) {
+    fs.mkdirSync(trackingDir, { recursive: true });
+  }
+  return trackingDir;
+};
+
+/**
+ * Gets the per-channel tracking directory for storing channel-specific state files.
+ * @param {string} channelFolderName - The channel folder name (e.g., "ChannelName_123456")
+ * @returns {string} The channel tracking directory path
+ */
+const getChannelTrackingDirectory = (channelFolderName) => {
+  const channelTrackingDir = path.join(getTrackingDirectory(), channelFolderName);
+  if (!fs.existsSync(channelTrackingDir)) {
+    fs.mkdirSync(channelTrackingDir, { recursive: true });
+  }
+  return channelTrackingDir;
+};
+
 module.exports = {
   getMediaType,
   checkFileExist,
@@ -322,5 +348,7 @@ module.exports = {
   sanitizeFolderName,
   createChannelFolderName,
   getExportDirectory,
+  getTrackingDirectory,
+  getChannelTrackingDirectory,
   MEDIA_TYPES,
 };

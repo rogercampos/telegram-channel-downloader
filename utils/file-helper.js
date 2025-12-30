@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const { logMessage, getExportDirectory } = require("./helper");
+const { logMessage, getChannelTrackingDirectory } = require("./helper");
 
 const CONFIG_FILE = path.join(__dirname, "../config.json");
-const getLastSelectionFile = () => path.join(getExportDirectory(), "last_selection.json");
+const getLastSelectionFile = (channelFolderName) => path.join(getChannelTrackingDirectory(channelFolderName), "last_selection.json");
 
 /**
  * Reads the content of a file synchronously.
@@ -28,10 +28,12 @@ const readFileSync = (filePath, showError = true) => {
  * @param {Object} data - The data to be written to the file.
  * @throws Will throw an error if writing to the file fails.
  */
-const writeFileSync = (filePath, data) => {
+const writeFileSync = (filePath, data, silent = false) => {
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-    logMessage.success(`File written successfully: ${filePath}`);
+    if (!silent) {
+      logMessage.success(`File written successfully: ${filePath}`);
+    }
   } catch (err) {
     logMessage.error(`Error writing file: ${filePath}`, err);
     throw err;
@@ -73,13 +75,14 @@ const getCredentials = () => {
 };
 
 /**
- * Retrieves the last selection from a file.
+ * Retrieves the last selection from a channel's tracking file.
  *
+ * @param {string} channelFolderName - The channel folder name
  * @returns {Object} The last selection data parsed from the file. Returns an empty object if an error occurs.
  */
-const getLastSelection = () => {
+const getLastSelection = (channelFolderName) => {
   try {
-    const data = readFileSync(getLastSelectionFile(), false);
+    const data = readFileSync(getLastSelectionFile(channelFolderName), false);
     return JSON.parse(data);
   } catch (_) {
     return {};
@@ -87,18 +90,19 @@ const getLastSelection = () => {
 };
 
 /**
- * Updates the last selection with the provided object.
+ * Updates the last selection for a channel with the provided object.
  *
  * This function merges the provided object with the last selection
- * and writes the result to the LAST_SELECTION_FILE. If an error occurs
+ * and writes the result to the channel's tracking file. If an error occurs
  * during the process, it logs an error message.
  *
+ * @param {string} channelFolderName - The channel folder name
  * @param {Object} object - The object to merge with the last selection.
  */
-const updateLastSelection = (object) => {
+const updateLastSelection = (channelFolderName, object) => {
   try {
-    const last = { ...getLastSelection(), ...object };
-    writeFileSync(getLastSelectionFile(), last);
+    const last = { ...getLastSelection(channelFolderName), ...object };
+    writeFileSync(getLastSelectionFile(channelFolderName), last, true);
   } catch (err) {
     logMessage.error("Failed to update last selection", err);
   }
