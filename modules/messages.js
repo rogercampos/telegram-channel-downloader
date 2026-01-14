@@ -6,13 +6,17 @@ const { resumableDownload, getPartialFileSize, getPartialFilePath } = require(".
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [5, 15, 30, 60, 120]; // seconds
 
-const getMessages = async (client, channelId, limit = 10, offsetId = 0) => {
+const getMessages = async (client, channelId, limit = 10, offsetId = 0, topicId = null) => {
   if (!client || !channelId) {
     throw new Error("Client and channelId are required");
   }
 
   try {
-    const result = await client.getMessages(channelId, { limit, offsetId });
+    const options = { limit, offsetId };
+    if (topicId) {
+      options.replyTo = topicId;
+    }
+    const result = await client.getMessages(channelId, options);
     return result;
   } catch (error) {
     throw new Error(`Failed to get messages: ${error.message}`);

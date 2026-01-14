@@ -75,6 +75,7 @@ node cli.js [script-name] --options
 | Script Name               | Description                                                   |
 |---------------------------|---------------------------------------------------------------|
 | `download-channel`         | Download all media from a channel (default)                   |
+| `download-topic`           | Download all media from a topic/thread within a channel       |
 | `listen-channel`           | Listen to a channel and download media from incoming messages |
 | `download-selected-message`| Download media from selected messages                         |
 | `download-from-links`      | Download videos from messages linked within a source message  |
@@ -106,6 +107,52 @@ node cli.js download-channel --channelId=12345 --until_date=31/12/2024
 # Download messages within a specific date range
 node cli.js download-channel --channelId=12345 --from_date=01/12/2024 --until_date=31/12/2024
 ```
+
+### Download from Topic/Thread
+
+The `download-topic` command downloads all media from a specific topic (also known as a thread or forum topic) within a Telegram supergroup. Topics are sub-forums within a group where discussions can be organized by theme.
+
+**Usage:**
+
+```bash
+node cli.js download-topic --url="https://t.me/c/2209905090/22879"
+```
+
+**Options:**
+
+| Option        | Description                                      |
+|---------------|--------------------------------------------------|
+| `--url`       | The Telegram topic URL (required)                |
+| `--from_date` | Only download messages posted on or after this date |
+| `--until_date`| Only download messages posted on or before this date |
+
+**Examples:**
+
+```bash
+# Download all media from a topic
+node cli.js download-topic --url="https://t.me/c/2209905090/22879"
+
+# Download with date filtering
+node cli.js download-topic --url="https://t.me/c/2209905090/22879" --from_date=01/12/2024
+
+# Download within a date range
+node cli.js download-topic --url="https://t.me/c/2209905090/22879" --from_date=01/12/2024 --until_date=31/12/2024
+```
+
+**URL format:**
+
+Topic URLs follow the pattern `https://t.me/c/CHANNEL_ID/TOPIC_ID`, where:
+- `CHANNEL_ID` is the numeric ID of the supergroup
+- `TOPIC_ID` is the numeric ID of the topic within that group
+
+**Features:**
+
+* Downloads are saved to `~/Downloads/topic_<TopicName>/` (uses the topic title as folder name)
+* Supports date filtering with `--from_date` and `--until_date`
+* Resumable downloads - can be interrupted and continued later
+* Skips already downloaded files on subsequent runs
+
+---
 
 ### Download from Links
 

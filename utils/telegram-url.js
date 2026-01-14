@@ -72,6 +72,48 @@ const parseTelegramUrl = (url) => {
 };
 
 /**
+ * Parses a Telegram topic URL and extracts channel ID and topic ID.
+ *
+ * Supported formats:
+ * - https://t.me/c/2209905090/22879  → Private channel topic (channelId: 2209905090, topicId: 22879)
+ *
+ * Note: This is specifically for topic URLs where the second number is the topic ID,
+ * not a message ID. Use this when you know you're dealing with a topic link.
+ *
+ * @param {string} url - The Telegram URL to parse
+ * @returns {Object|null} Parsed result with channelId and topicId. Null if invalid.
+ */
+const parseTopicUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+
+  try {
+    const urlObj = new URL(url);
+
+    // Must be a t.me URL
+    if (!urlObj.hostname.endsWith("t.me")) return null;
+
+    const pathParts = urlObj.pathname.split("/").filter(Boolean);
+
+    // Topic URL format: /c/channelId/topicId
+    if (pathParts.length < 3 || pathParts[0] !== "c") return null;
+
+    const channelId = pathParts[1];
+    const topicId = pathParts[2];
+
+    if (!channelId || !/^\d+$/.test(channelId)) return null;
+    if (!topicId || !/^\d+$/.test(topicId)) return null;
+
+    return {
+      channelId: parseInt(channelId, 10),
+      topicId: parseInt(topicId, 10),
+      isPrivate: true,
+    };
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
  * Extracts all Telegram message URLs from a message's text and entities.
  *
  * @param {Object} message - The Telegram message object
@@ -140,6 +182,7 @@ const toApiChannelId = (urlChannelId) => {
 
 module.exports = {
   parseTelegramUrl,
+  parseTopicUrl,
   extractTelegramLinksFromMessage,
   isTelegramMessageUrl,
   toApiChannelId,
