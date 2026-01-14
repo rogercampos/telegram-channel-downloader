@@ -77,6 +77,7 @@ node cli.js [script-name] --options
 | `download-channel`         | Download all media from a channel (default)                   |
 | `listen-channel`           | Listen to a channel and download media from incoming messages |
 | `download-selected-message`| Download media from selected messages                         |
+| `download-from-links`      | Download videos from messages linked within a source message  |
 
 **Example:**
 
@@ -105,6 +106,44 @@ node cli.js download-channel --channelId=12345 --until_date=31/12/2024
 # Download messages within a specific date range
 node cli.js download-channel --channelId=12345 --from_date=01/12/2024 --until_date=31/12/2024
 ```
+
+### Download from Links
+
+The `download-from-links` command downloads videos from messages that are linked within a source message. This is useful when a Telegram message contains a list of links to other messages (e.g., an index or playlist), and you want to download all the videos referenced in those links.
+
+**Usage:**
+
+```bash
+node cli.js download-from-links --url="https://t.me/c/2623426951/3/17039"
+```
+
+Or run without arguments to be prompted for the URL:
+
+```bash
+node cli.js download-from-links
+```
+
+**Supported URL formats:**
+
+| Format | Description |
+|--------|-------------|
+| `https://t.me/c/CHANNEL_ID/THREAD_ID/MESSAGE_ID` | Private channel with thread/topic |
+| `https://t.me/c/CHANNEL_ID/MESSAGE_ID` | Private channel |
+| `https://t.me/USERNAME/MESSAGE_ID` | Public channel by username |
+
+**How it works:**
+
+1. Fetches the source message from the provided URL
+2. Extracts all Telegram message links from its content
+3. For each link, checks the linked message and up to 5 messages after it for videos (handles "announcement + video" patterns)
+4. Downloads all found videos to `~/Downloads/linked_<ChannelName>_<MessageId>/video/`
+
+**Features:**
+
+* Resumable downloads - interrupted downloads continue from where they left off
+* Skips already downloaded files on subsequent runs
+* Handles gaps in message IDs (deleted messages, text replies between announcement and video)
+* Deduplicates videos that may be referenced by multiple links
 
 ## Additional Notes
 
